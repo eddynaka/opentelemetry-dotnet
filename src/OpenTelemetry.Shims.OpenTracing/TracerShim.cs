@@ -81,7 +81,7 @@ namespace OpenTelemetry.Shims.OpenTracing
                     return value;
                 }
 
-                activityContext = this.textFormat.Extract(carrierMap, GetCarrierKeyValue);
+                activityContext = this.textFormat.Extract(default, carrierMap, GetCarrierKeyValue);
             }
 
             return !activityContext.IsValid() ? null : new SpanContextShim(new Trace.SpanContext(activityContext));

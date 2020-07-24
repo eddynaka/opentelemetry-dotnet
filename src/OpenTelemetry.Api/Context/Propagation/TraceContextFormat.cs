@@ -74,18 +74,18 @@ namespace OpenTelemetry.Context.Propagation
         }
 
         /// <inheritdoc/>
-        public ActivityContext Extract<T>(T carrier, Func<T, string, IEnumerable<string>> getter)
+        public ActivityContext Extract<T>(ActivityContext activityContext, T carrier, Func<T, string, IEnumerable<string>> getter)
         {
             if (carrier == null)
             {
                 OpenTelemetryApiEventSource.Log.FailedToInjectActivityContext("null carrier");
-                return default;
+                return activityContext;
             }
 
             if (getter == null)
             {
                 OpenTelemetryApiEventSource.Log.FailedToExtractContext("null getter");
-                return default;
+                return activityContext;
             }
 
             try
@@ -95,7 +95,7 @@ namespace OpenTelemetry.Context.Propagation
                 // There must be a single traceparent
                 if (traceparentCollection == null || traceparentCollection.Count() != 1)
                 {
-                    return default;
+                    return activityContext;
                 }
 
                 var traceparent = traceparentCollection.First();
@@ -103,7 +103,7 @@ namespace OpenTelemetry.Context.Propagation
 
                 if (!traceparentParsed)
                 {
-                    return default;
+                    return activityContext;
                 }
 
                 string tracestate = null;
@@ -121,7 +121,7 @@ namespace OpenTelemetry.Context.Propagation
             }
 
             // in case of exception indicate to upstream that there is no parseable context from the top
-            return default;
+            return activityContext;
         }
 
         /// <inheritdoc/>
