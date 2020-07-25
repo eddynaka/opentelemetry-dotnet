@@ -108,7 +108,7 @@ namespace OpenTelemetry.Context.Propagation
 
                 string tracestate = null;
                 var tracestateCollection = getter(carrier, TraceState);
-                if (tracestateCollection != null)
+                if (tracestateCollection?.Any() ?? false)
                 {
                     this.TryExtractTracestate(tracestateCollection.ToArray(), out tracestate);
                 }
