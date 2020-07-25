@@ -25,7 +25,6 @@ namespace OpenTelemetry.Tests.Implementation.Trace.Propagation
     public class CompositePropagatorTest
     {
         private const string TraceParent = "traceparent";
-
         private static readonly string[] Empty = new string[0];
         private static readonly Func<IDictionary<string, string>, string, IEnumerable<string>> Getter = (headers, name) =>
         {
@@ -42,6 +41,9 @@ namespace OpenTelemetry.Tests.Implementation.Trace.Propagation
             carrier[name] = value;
         };
 
+        private ActivityTraceId traceId = ActivityTraceId.CreateRandom();
+        private ActivitySpanId spanId = ActivitySpanId.CreateRandom();
+
         [Fact]
         public void CompositePropagator_EmptyTextFormatList()
         {
@@ -51,21 +53,20 @@ namespace OpenTelemetry.Tests.Implementation.Trace.Propagation
             var activityContext = compositePropagator.Extract(default, carrier, Getter);
             Assert.Equal(default, activityContext);
 
-            var traceId = ActivityTraceId.CreateRandom();
-            var spanId = ActivitySpanId.CreateRandom();
-            activityContext = new ActivityContext(traceId, spanId, ActivityTraceFlags.Recorded, traceState: null);
+            activityContext = new ActivityContext(this.traceId, this.spanId, ActivityTraceFlags.Recorded, traceState: null);
             compositePropagator.Inject(activityContext, carrier, Setter);
             Assert.Equal(expected, carrier);
+
+            bool isInjected = compositePropagator.IsInjected(carrier, Getter);
+            Assert.True(isInjected);
         }
 
         [Fact]
         public void CompositePropagator_WithTraceContext()
         {
-            var traceId = ActivityTraceId.CreateRandom();
-            var spanId = ActivitySpanId.CreateRandom();
             var expectedHeaders = new Dictionary<string, string>
             {
-                { TraceParent, $"00-{traceId}-{spanId}-01" },
+                { TraceParent, $"00-{this.traceId}-{this.spanId}-01" },
             };
 
             var compositePropagator = new CompositePropagator(new List<ITextFormat>
@@ -73,7 +74,7 @@ namespace OpenTelemetry.Tests.Implementation.Trace.Propagation
                 new TraceContextFormat(),
             });
 
-            var activityContext = new ActivityContext(traceId, spanId, ActivityTraceFlags.Recorded, traceState: null);
+            var activityContext = new ActivityContext(this.traceId, this.spanId, ActivityTraceFlags.Recorded, traceState: null);
             var carrier = new Dictionary<string, string>();
             compositePropagator.Inject(activityContext, carrier, Setter);
 
@@ -87,13 +88,11 @@ namespace OpenTelemetry.Tests.Implementation.Trace.Propagation
         [Fact]
         public void CompositePropagator_WithTraceContextAndB3Format()
         {
-            var traceId = ActivityTraceId.CreateRandom();
-            var spanId = ActivitySpanId.CreateRandom();
             var expectedHeaders = new Dictionary<string, string>
             {
-                { TraceParent, $"00-{traceId}-{spanId}-01" },
-                { B3Format.XB3TraceId, traceId.ToString() },
-                { B3Format.XB3SpanId, spanId.ToString() },
+                { TraceParent, $"00-{this.traceId}-{this.spanId}-01" },
+                { B3Format.XB3TraceId, this.traceId.ToString() },
+                { B3Format.XB3SpanId, this.spanId.ToString() },
                 { B3Format.XB3Sampled, "1" },
             };
 
@@ -103,7 +102,7 @@ namespace OpenTelemetry.Tests.Implementation.Trace.Propagation
                 new B3Format(),
             });
 
-            var activityContext = new ActivityContext(traceId, spanId, ActivityTraceFlags.Recorded, traceState: null);
+            var activityContext = new ActivityContext(this.traceId, this.spanId, ActivityTraceFlags.Recorded, traceState: null);
             var carrier = new Dictionary<string, string>();
             compositePropagator.Inject(activityContext, carrier, Setter);
 
@@ -113,6 +112,9 @@ namespace OpenTelemetry.Tests.Implementation.Trace.Propagation
             Assert.Equal(activityContext.TraceId, ctx.TraceId);
             Assert.Equal(activityContext.SpanId, ctx.SpanId);
             Assert.True(ctx.IsValid());
+
+            bool isInjected = compositePropagator.IsInjected(carrier, Getter);
+            Assert.True(isInjected);
         }
 
         [Fact]
@@ -121,7 +123,24 @@ namespace OpenTelemetry.Tests.Implementation.Trace.Propagation
             var compositePropagator = new CompositePropagator();
 
             Assert.Throws<NotImplementedException>(() => compositePropagator.Fields);
-            Assert.Throws<NotImplementedException>(() => compositePropagator.IsInjected(null, Getter));
+        }
+
+        [Fact]
+        public void CompositePropagator_B3FormatNotInjected()
+        {
+            var carrier = new Dictionary<string, string>
+            {
+                { TraceParent, $"00-{this.traceId}-{this.spanId}-01" },
+            };
+
+            var compositePropagator = new CompositePropagator(new List<ITextFormat>
+            {
+                new TraceContextFormat(),
+                new B3Format(),
+            });
+
+            bool isInjected = compositePropagator.IsInjected(carrier, Getter);
+            Assert.False(isInjected);
         }
     }
 }

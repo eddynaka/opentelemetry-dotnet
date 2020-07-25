@@ -62,7 +62,15 @@ namespace OpenTelemetry.Context.Propagation
         /// <inheritdoc/>
         public bool IsInjected<T>(T carrier, Func<T, string, IEnumerable<string>> getter)
         {
-            throw new NotImplementedException();
+            foreach (var textFormat in this.textFormats)
+            {
+                if (!textFormat.IsInjected(carrier, getter))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
     }
 }
