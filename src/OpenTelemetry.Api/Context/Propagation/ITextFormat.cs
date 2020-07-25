@@ -45,7 +45,7 @@ namespace OpenTelemetry.Context.Propagation
         /// Extracts activity context from textual representation.
         /// </summary>
         /// <typeparam name="T">Type of object to extract context from. Typically HttpRequest or similar.</typeparam>
-        /// <param name="activityContext">Activity context to transmit over the wire.</param>
+        /// <param name="activityContext">Activity context to extract from the wire.</param>
         /// <param name="carrier">Object to extract context from. Instance of this object will be passed to the getter.</param>
         /// <param name="getter">Function that will return string value of a key with the specified name.</param>
         /// <returns>Activity context from it's text representation.</returns>
