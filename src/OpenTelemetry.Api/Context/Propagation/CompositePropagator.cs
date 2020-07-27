@@ -17,6 +17,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 
 namespace OpenTelemetry.Context.Propagation
 {
@@ -37,7 +38,7 @@ namespace OpenTelemetry.Context.Propagation
         }
 
         /// <inheritdoc/>
-        public ISet<string> Fields => throw new NotImplementedException();
+        public ISet<string> Fields => new HashSet<string>();
 
         /// <inheritdoc/>
         public ActivityContext Extract<T>(ActivityContext activityContext, T carrier, Func<T, string, IEnumerable<string>> getter)
@@ -45,6 +46,10 @@ namespace OpenTelemetry.Context.Propagation
             foreach (var textFormat in this.textFormats)
             {
                 activityContext = textFormat.Extract(activityContext, carrier, getter);
+                if (activityContext.IsValid())
+                {
+                    return activityContext;
+                }
             }
 
             return activityContext;
@@ -62,6 +67,11 @@ namespace OpenTelemetry.Context.Propagation
         /// <inheritdoc/>
         public bool IsInjected<T>(T carrier, Func<T, string, IEnumerable<string>> getter)
         {
+            if (!this.textFormats.Any())
+            {
+                return false;
+            }
+
             foreach (var textFormat in this.textFormats)
             {
                 if (!textFormat.IsInjected(carrier, getter))

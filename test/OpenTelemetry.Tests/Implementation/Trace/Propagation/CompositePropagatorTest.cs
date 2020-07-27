@@ -58,7 +58,7 @@ namespace OpenTelemetry.Tests.Implementation.Trace.Propagation
             Assert.Equal(expected, carrier);
 
             bool isInjected = compositePropagator.IsInjected(carrier, Getter);
-            Assert.True(isInjected);
+            Assert.False(isInjected);
         }
 
         [Fact]
@@ -118,11 +118,11 @@ namespace OpenTelemetry.Tests.Implementation.Trace.Propagation
         }
 
         [Fact]
-        public void CompositePropagator_ThrowNotImplementedException()
+        public void CompositePropagator_EmptyFields()
         {
             var compositePropagator = new CompositePropagator();
 
-            Assert.Throws<NotImplementedException>(() => compositePropagator.Fields);
+            Assert.Empty(compositePropagator.Fields);
         }
 
         [Fact]
