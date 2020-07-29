@@ -17,6 +17,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using OpenTelemetry.Context.Propagation;
 using Xunit;
 
@@ -141,6 +142,68 @@ namespace OpenTelemetry.Tests.Implementation.Trace.Propagation
 
             bool isInjected = compositePropagator.IsInjected(carrier, Getter);
             Assert.False(isInjected);
+        }
+
+        [Fact]
+        public void CompositePropagator_CustomPropagator()
+        {
+            var compositePropagator = new CompositePropagator(new List<ITextFormat>
+            {
+                new CustomPropagator1(),
+            });
+
+            var activityContext = new ActivityContext(this.traceId, this.spanId, ActivityTraceFlags.Recorded, traceState: null);
+            var carrier = new Dictionary<string, string>();
+
+            compositePropagator.Inject(activityContext, carrier, Setter);
+            Assert.Single(carrier);
+
+            bool isInjected = compositePropagator.IsInjected(carrier, Getter);
+            Assert.True(isInjected);
+        }
+
+        [Fact]
+        public void CompositePropagator_UsingSameTag()
+        {
+            var compositePropagator = new CompositePropagator(new List<ITextFormat>
+            {
+                new CustomPropagator1(),
+                new CustomPropagator2(),
+            });
+
+            var activityContext = new ActivityContext(this.traceId, this.spanId, ActivityTraceFlags.Recorded, traceState: null);
+            var carrier = new Dictionary<string, string>();
+
+            compositePropagator.Inject(activityContext, carrier, Setter);
+            Assert.Single(carrier);
+            Assert.Equal("custom-propagator-2", carrier.First().Value);
+
+            bool isInjected = compositePropagator.IsInjected(carrier, Getter);
+            Assert.True(isInjected);
+        }
+
+        [Fact]
+        public void CompositePropagator_CustomAndTraceFormats()
+        {
+            var compositePropagator = new CompositePropagator(new List<ITextFormat>
+            {
+                new CustomPropagator1(),
+                new TraceContextFormat(),
+            });
+
+            var activityContext = new ActivityContext(this.traceId, this.spanId, ActivityTraceFlags.Recorded, traceState: null);
+            var carrier = new Dictionary<string, string>();
+
+            compositePropagator.Inject(activityContext, carrier, Setter);
+            Assert.Equal(2, carrier.Count);
+
+            bool isInjected = compositePropagator.IsInjected(carrier, Getter);
+            Assert.True(isInjected);
+
+            ActivityContext newContext = compositePropagator.Extract(default, carrier, Getter);
+            Assert.Equal(this.traceId, newContext.TraceId);
+            Assert.Equal(this.spanId, newContext.SpanId);
+            Assert.True(newContext.IsValid());
         }
     }
 }
