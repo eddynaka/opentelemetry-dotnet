@@ -145,7 +145,7 @@ namespace OpenTelemetry.Tests.Implementation.Trace.Propagation
         }
 
         [Fact]
-        public void CompositePropagator_CustomPropagator()
+        public void CompositePropagator_TestPropagator()
         {
             var compositePropagator = new CompositePropagator(new List<ITextFormat>
             {
@@ -188,7 +188,7 @@ namespace OpenTelemetry.Tests.Implementation.Trace.Propagation
         {
             var compositePropagator = new CompositePropagator(new List<ITextFormat>
             {
-                new CustomPropagator1(),
+                new TestPropagator("custom-traceparent", "custom-tracestate-1"),
                 new TraceContextFormat(),
             });
 
