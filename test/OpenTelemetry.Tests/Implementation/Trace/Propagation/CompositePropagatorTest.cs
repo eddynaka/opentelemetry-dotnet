@@ -149,14 +149,16 @@ namespace OpenTelemetry.Tests.Implementation.Trace.Propagation
         {
             var compositePropagator = new CompositePropagator(new List<ITextFormat>
             {
-                new CustomPropagator1(),
+                new TestPropagator("custom-traceparent-1", "custom-tracestate-1"),
+                new TestPropagator("custom-traceparent-2", "custom-tracestate-2"),
             });
 
             var activityContext = new ActivityContext(this.traceId, this.spanId, ActivityTraceFlags.Recorded, traceState: null);
             var carrier = new Dictionary<string, string>();
 
             compositePropagator.Inject(activityContext, carrier, Setter);
-            Assert.Single(carrier);
+            Assert.Contains(carrier, kv => kv.Key == "custom-traceparent-1");
+            Assert.Contains(carrier, kv => kv.Key == "custom-traceparent-2");
 
             bool isInjected = compositePropagator.IsInjected(carrier, Getter);
             Assert.True(isInjected);
@@ -167,16 +169,15 @@ namespace OpenTelemetry.Tests.Implementation.Trace.Propagation
         {
             var compositePropagator = new CompositePropagator(new List<ITextFormat>
             {
-                new CustomPropagator1(),
-                new CustomPropagator2(),
+                new TestPropagator("custom-traceparent", "custom-tracestate-1"),
+                new TestPropagator("custom-traceparent", "custom-tracestate-2"),
             });
 
             var activityContext = new ActivityContext(this.traceId, this.spanId, ActivityTraceFlags.Recorded, traceState: null);
             var carrier = new Dictionary<string, string>();
 
             compositePropagator.Inject(activityContext, carrier, Setter);
-            Assert.Single(carrier);
-            Assert.Equal("custom-propagator-2", carrier.First().Value);
+            Assert.Contains(carrier, kv => kv.Key == "custom-traceparent");
 
             bool isInjected = compositePropagator.IsInjected(carrier, Getter);
             Assert.True(isInjected);
